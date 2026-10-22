@@ -1,6 +1,6 @@
 # 📦 Prueba Técnica Developer - Parameta S.A.S
 
-Este proyecto es una implementación de un servicio REST desarrollado en **Java 17** utilizando **Spring Boot**. El objetivo es recibir información de un empleado, validar los datos, consultar un servicio SOAP y almacenar los datos en una base de datos. Finalmente, retorna un JSON con información calculada adicional.
+Este proyecto es una implementación de un servicio REST desarrollado en **Java 25** utilizando **Spring Boot**. El objetivo es recibir información de un empleado, validar los datos, consultar un servicio SOAP y almacenar los datos en una base de datos. Finalmente, retorna un JSON con información calculada adicional.
 
 ---
 
@@ -30,8 +30,8 @@ Se requiere exponer un servicio REST que reciba un objeto **Empleado** con los s
 
 ## ⚙️ Tecnologías utilizadas
 
-- Java 17
-- Spring Boot
+- Java 25
+- Spring Boot 3.5
 - Spring Web
 - Spring Data JPA
 - Bean Validation (`@Valid`)
