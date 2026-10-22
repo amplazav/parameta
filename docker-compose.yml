@@ -1,0 +1,86 @@
+services:
+  # Contenedor MYSQL
+  mysql:
+    image: mysql:8.0
+    container_name: mysql-db
+    ports:
+      - "3307:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: ${SPRING_DATASOURCE_PASSWORD}
+      MYSQL_DATABASE: ${SPRING_DATASOURCE_DB}
+      MYSQL_USER: ${SPRING_DATASOURCE_USERNAME}
+      MYSQL_PASSWORD: ${SPRING_DATASOURCE_PASSWORD}
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    volumes:
+      - mysql:/var/lib/mysql
+    networks:
+      - parameta_network
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u\"$$MYSQL_USER\" -p\"$$MYSQL_PASSWORD\" --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 20s
+
+  producer-soap:
+    build: 
+      context: ./ws-soap
+      dockerfile: Dockerfile 
+    container_name: producer-soap
+    depends_on:
+      mysql:
+        condition: service_healthy
+    env_file: # Carga variables de entorno desde un archivo .env
+      - .env
+    ports:
+      - 8081:8081
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/${SPRING_DATASOURCE_DB}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME}
+      SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD}
+    networks:
+      - parameta_network
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:8081/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+
+#contendor de la aplicacion
+  comsumer-soap:
+    build: #  Define como se construye la imagen del contenedor.
+      context: ./parameta # Usa el directorio actual como contexto de construccion.
+      dockerfile: Dockerfile # Especifica el archivo Dockerfile a utilizar
+    container_name: consumer-soap
+    depends_on:
+      mysql:
+        condition: service_healthy
+      producer-soap:
+        condition: service_healthy
+    env_file: # Carga variables de entorno desde un archivo .env
+      - .env
+    ports:
+      - 8080:8080
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/${SPRING_DATASOURCE_DB}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME}
+      SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD}
+      SOAP_WSDL_URL: http://producer-soap:8081/ws/employee.wsdl
+    networks:
+      - parameta_network
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:8080/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+      
+# Red personalizada para la comunicacion entre contenedores
+networks:
+  parameta_network:
+    driver: bridge  
+
+# Volumenes para la persistencia de datos
+volumes:
+  mysql:
